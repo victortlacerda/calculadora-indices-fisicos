@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de Mecânica dos Solos</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--tx:#1f2328;--mu:#6b7280;--ac:#9a5b2e;--acs:#f3e6da;--bd:#e3e0d8;--ok:#2f7d4f;--wr:#b45309;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#17150f;--card:#221f17;--tx:#ece8de;--mu:#9a9486;--ac:#e0a070;--acs:#3a2d20;--bd:#37332a;--ok:#6fcf97;--wr:#f0b45a}}
+:root[data-theme=dark]{--bg:#17150f;--card:#221f17;--tx:#ece8de;--mu:#9a9486;--ac:#e0a070;--acs:#3a2d20;--bd:#37332a;--ok:#6fcf97;--wr:#f0b45a}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:920px;margin:0 auto;padding:20px 16px 60px}
+h1{font:600 24px Georgia,serif;margin:0}p.s{color:var(--mu);margin:4px 0 18px}
+section{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:14px}
+h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--mu);margin:0 0 10px}
+h2 b{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--ac);color:var(--bg);font-size:12px;margin-right:6px}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+button.c,button.t{border:1px solid var(--bd);background:transparent;color:var(--tx);border-radius:999px;padding:6px 12px;cursor:pointer;font:inherit}
+button.on{background:var(--ac);color:var(--bg);border-color:var(--ac)}
+button.t{border-radius:10px;text-align:left}button.t small{color:inherit;opacity:.7;display:block;font-size:11px}
+.g{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.f span{display:block;font-size:12px;color:var(--mu)}.f span b{color:var(--tx);font-size:14px}
+.f div{display:flex;align-items:center;border:1px solid var(--bd);border-radius:8px;overflow:hidden;background:var(--bg)}
+.f input{flex:1;min-width:0;border:0;background:transparent;color:var(--tx);padding:8px;font:inherit;outline:0}
+.f div:focus-within{border-color:var(--ac)}.f i{font-style:normal;color:var(--mu);font-size:12px;padding:0 8px}
+.big{font:600 30px Georgia,serif;color:var(--ac)}.big small{font-size:14px;color:var(--mu)}
+.fm{font-family:Georgia,serif;font-size:15px;background:var(--acs);padding:6px 10px;border-radius:8px;margin:4px 0;overflow-x:auto;white-space:nowrap}
+ol{padding-left:20px}li{margin-bottom:10px}.tag{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--acs);color:var(--ac);margin-left:6px}
+details{border:1px solid var(--bd);border-radius:10px;padding:8px 12px;margin-top:8px}summary{cursor:pointer;font-weight:500}
+.wr{color:var(--wr)}.mu{color:var(--mu);font-size:13px}.ok{color:var(--ok)}
+.clr{background:none;border:0;color:var(--ac);cursor:pointer;font:inherit;text-decoration:underline;margin-top:10px;padding:0}
+</style></head><body><main>
+<h1>Calculadora de Mecânica dos Solos</h1>
+<p class="s">Escolha o que quer calcular, preencha o que você tem — o programa encontra o caminho, mostra o passo a passo e as fórmulas alternativas.</p>
+<section><h2><b>1</b>O que você quer calcular?</h2><div class="row" id="cats"></div><div class="row" id="tg" style="margin-top:10px"></div></section>
+<section><h2><b>2</b>O que você tem? <span class="mu" style="text-transform:none;letter-spacing:0">(só o que souber)</span></h2><div class="g" id="in"></div><button class="clr" id="clr">Limpar valores</button></section>
+<section><h2><b>3</b>Resultado</h2><div id="out"></div></section>
+<p class="mu">Baseado no PDF “Fórmulas de correlação”. Use unidades coerentes (kN, m, kPa). Ângulos em graus. γw padrão = 10 kN/m³. Nas substituições, ω, η, Sr, DR e U aparecem em decimal.</p>
+</main>
+<script>
+const C={
+'Índices físicos':{gam:['γ','Peso específico natural','kN/m³'],gd:['γd','Peso específico seco','kN/m³'],gsat:['γsat','Peso específico saturado','kN/m³'],gsub:['γ′','Peso específico submerso','kN/m³'],gs:['γs','Peso específico dos sólidos','kN/m³'],gw:['γw','Peso específico da água','kN/m³'],Gs:['Gs','Densidade relativa dos grãos','–'],w:['ω','Teor de umidade','%',1],e:['e','Índice de vazios (e0)','–'],n:['η','Porosidade','%',1],Sr:['Sr','Grau de saturação','%',1],W:['W','Peso total','kN'],Ws:['Ws','Peso dos sólidos','kN'],Ww:['Ww','Peso da água','kN'],V:['V','Volume total','m³'],Vs:['Vs','Volume de sólidos','m³'],Vv:['Vv','Volume de vazios','m³'],Vw:['Vw','Volume de água','m³'],Va:['Va','Volume de ar','m³'],emax:['emáx','Índice de vazios máximo','–'],emin:['emín','Índice de vazios mínimo','–'],Dr:['DR','Compacidade relativa','%',1]},
+'Plasticidade':{LL:['LL','Limite de liquidez','%'],LP:['LP','Limite de plasticidade','%'],IP:['IP','Índice de plasticidade','%'],IL:['IL','Índice de liquidez','–'],IA:['IA','Índice de atividade','–'],Arg:['%Arg','Fração argila','%']},
+'Granulometria':{D10:['D10','Diâmetro efetivo','mm'],D30:['D30','Diâmetro D30','mm'],D60:['D60','Diâmetro D60','mm'],Cu:['Cu','Coef. de não uniformidade','–'],Cz:['Cc(g)','Coef. de curvatura','–']},
+'Permeabilidade':{K:['K','Condutividade hidráulica','cm/s'],ch:['c','Constante de Hazen (1 a 1,5)','–'],i:['i','Gradiente hidráulico','–'],dH:['ΔH','Perda de carga','m'],L:['L','Comprimento / altura da amostra','m'],v:['v','Velocidade de percolação','m/s'],Q:['Q','Vazão','m³/s'],A:['A','Área da seção','m²'],Qv:['Qv','Volume coletado (carga const.)','m³'],h:['h','Altura de carga','m'],t:['t','Tempo','s'],a:['a','Área do piezômetro','m²'],h1:['h1','Carga inicial','m'],h2:['h2','Carga final','m']},
+'Tensões e empuxos':{z:['z','Profundidade','m'],hw:['hw','Altura de água acima do ponto','m'],sv:['σv','Tensão vertical total','kPa'],u:['u','Poropressão','kPa'],svp:['σ′v','Tensão vertical efetiva','kPa'],shp:['σ′h','Tensão horizontal efetiva','kPa'],K0:['K0','Coef. de empuxo no repouso','–'],nu:['ν','Coeficiente de Poisson','–'],phi:['φ','Ângulo de atrito','°'],OCR:['OCR','Razão de sobreadensamento','–'],Ka:['Ka','Coef. de empuxo ativo','–'],Kp:['Kp','Coef. de empuxo passivo','–'],c:['c','Coesão','kPa'],H:['H','Altura / espessura da camada','m'],q:['q','Sobrecarga','kPa'],z0:['z0','Profundidade de tração','m'],Ea:['Ea','Empuxo ativo','kN/m'],Ep:['Ep','Empuxo passivo','kN/m'],E0:['E0','Empuxo no repouso','kN/m'],sig:['σ','Tensão normal no plano','kPa'],tf:['τf','Resistência ao cisalhamento','kPa']},
+'Adensamento':{Cc:['Cc','Índice de compressão','–'],Cs:['Cs','Índice de expansão','–'],De:['Δe','Variação do índice de vazios','–'],av:['av','Coef. de compressibilidade','1/kPa'],mv:['mv','Coef. de compress. volumétrico','1/kPa'],S:['S','Recalque','m'],dsig:['Δσ′','Acréscimo de tensão efetiva','kPa'],svp0:['σ′v0','Tensão efetiva atual','kPa'],svm:['σ′vm','Tensão de pré-adensamento','kPa'],U:['U','Grau de adensamento médio','%',1],Tv:['Tv','Fator de tempo','–'],Cv:['Cv','Coef. de adensamento','m²/s'],Hdr:['Hdr','Caminho máx. de drenagem','m'],t50:['t50','Tempo a 50% (Taylor)','s'],t90:['t90','Tempo a 90% (Casagrande)','s']}};
+const V={},CAT={};for(const c in C)for(const k in C[c]){V[k]=C[c][k];CAT[k]=c}
+const R=`e|n/(1-n)|por η
+e|gs/gd-1|por γs e γd
+e|w*Gs/Sr|por ω, Gs e Sr
+e|Vv/Vs|por volumes
+e|Gs*gw*(1+w)/gam-1|por γ
+e|emax-Dr*(emax-emin)|por DR
+n|e/(1+e)|por e
+n|1-gd/gs|por γd e γs
+n|Vv/V|por volumes
+Sr|w*Gs/e|por ω, Gs e e
+Sr|Vw/Vv|por volumes
+w|Ww/Ws|por pesos
+w|Sr*e/Gs|por Sr, e e Gs
+w|gam/gd-1|por γ e γd
+gam|gs*(1+w)/(1+e)|por γs
+gam|gd*(1+w)|por γd
+gam|(Gs+Sr*e)*gw/(1+e)|por Gs, Sr, e
+gam|W/V|por peso/volume
+gd|gs/(1+e)|por γs e e
+gd|gam/(1+w)|por γ e ω
+gd|(1-n)*gs|por η
+gd|Ws/V|por peso seco/volume
+gsat|(gs+e*gw)/(1+e)|por γs e e
+gsat|gd+n*gw|por γd e η
+gsat|gsub+gw|por γ′
+gsub|gsat-gw|por γsat
+gsub|(gs-gw)/(1+e)|por γs e e
+gs|Gs*gw|por Gs
+gs|Ws/Vs|por Ws/Vs
+gs|gd*(1+e)|por γd e e
+Gs|gs/gw|por γs/γw
+W|Ww+Ws|soma
+Ww|W-Ws|diferença
+Ww|w*Ws|por ω
+Ws|W-Ww|diferença
+Ws|gd*V|por γd
+V|Va+Vw+Vs|soma
+V|W/gam|por γ
+Vv|Va+Vw|soma
+Vv|n*V|por η
+Vv|e*Vs|por e
+Vs|V-Vv|diferença
+Vs|Ws/gs|por Ws/γs
+Vw|Ww/gw|por Ww/γw
+Vw|Sr*Vv|por Sr
+Va|Vv-Vw|diferença
+Dr|(emax-e)/(emax-emin)|definição
+IP|LL-LP|definição
+IP|IA*Arg|por atividade
+LL|LP+IP|por LP e IP
+LP|LL-IP|por LL e IP
+IL|(w*100-LP)/(LL-LP)|por LL e LP
+IL|(w*100-LP)/IP|por IP
+w|(LP+IL*IP)/100|por IL
+IA|IP/Arg|definição
+Arg|IP/IA|por IP e IA
+Cu|D60/D10|definição
+Cz|D30**2/(D10*D60)|definição
+D10|D60/Cu|por Cu
+i|dH/L|definição
+dH|i*L|por i
+v|K*i|Darcy
+Q|K*i*A|Darcy
+K|Q/(i*A)|Darcy (por Q)
+K|v/i|Darcy (por v)
+K|ch*D10**2|Hazen (solos Cu<5)
+K|Qv*L/(A*h*t)|permeâmetro de carga constante
+K|2.303*a*L/(A*t)*log10(h1/h2)|permeâmetro de carga variável
+K|Cv*mv*gw|por adensamento
+sv|gam*z|solo homogêneo
+u|gw*hw|hidrostática
+svp|sv-u|Terzaghi
+svp|gsub*z|solo submerso
+shp|K0*svp|por K0
+K0|1-sind(phi)|Jáky (NA)
+K0|nu/(1-nu)|por Poisson
+K0|(1-sind(phi))*OCR**0.5|sobreadensado (empírica)
+Ka|tand(45-phi/2)**2|Rankine
+Ka|(1-sind(phi))/(1+sind(phi))|Rankine (forma sen φ)
+Kp|tand(45+phi/2)**2|Rankine
+Kp|(1+sind(phi))/(1-sind(phi))|Rankine (forma sen φ)
+z0|2*c/(gam*sqrt(Ka))|profundidade de tração
+Ea|0.5*gam*H**2*Ka|areia, sem sobrecarga
+Ea|0.5*gam*H**2*Ka+q*H*Ka|com sobrecarga
+Ea|Ka*gam*(H-z0)**2/2|solo coesivo
+Ep|0.5*gam*H**2*Kp+2*c*H*sqrt(Kp)|Rankine
+E0|0.5*gam*H**2*K0|repouso
+tf|c+sig*tand(phi)|Mohr-Coulomb
+Cc|0.009*(LL-10)|Skempton
+Cc|0.75*(e-0.5)|argilas brasileiras
+Cc|0.2343*LL*Gs/100|por LL e Gs
+Cs|Cc/5|1/5 de Cc
+Cs|Cc/10|1/10 de Cc
+Cs|0.0463*LL*Gs/100|por LL e Gs
+De|av*dsig|por av
+De|S*(1+e)/H|por recalque
+av|De/dsig|definição
+mv|av/(1+e)|por av
+mv|K/(Cv*gw)|por K e Cv
+OCR|svm/svp0|definição
+svm|OCR*svp0|por OCR
+S|H*De/(1+e)|equação geral
+S|mv*dsig*H|por mv
+S|Cc*H/(1+e)*log10((svp0+dsig)/svp0)|argila normalmente adensada
+S|Cs*H/(1+e)*log10((svp0+dsig)/svp0)|argila sobreadensada (σ′v0+Δσ′ ≤ σ′vm)
+Tv|PI/4*U**2|U ≤ 60%|U<=0.6
+Tv|1.781-0.933*log10(100-U*100)|U > 60%|U>0.6
+Tv|Cv*t/Hdr**2|por Cv e t
+U|sqrt(4*Tv/PI)|Tv ≤ 0,28|Tv<=0.2827
+Cv|Tv*Hdr**2/t|geral
+Cv|0.197*Hdr**2/t50|Taylor (raiz do tempo)
+Cv|0.848*Hdr**2/t90|Casagrande (log do tempo)
+Cv|K/(gw*mv)|por K e mv
+t|Tv*Hdr**2/Cv|por Tv e Cv`.split('\n').map(s=>{const[t,x,l,c]=s.split('|');const ins=[...new Set((x+' '+(c||'')).match(/[A-Za-z_]\w*/g).filter(m=>V[m]))];return{t,x,l,c,ins}});
+const H={sind:d=>Math.sin(d*Math.PI/180),tand:d=>Math.tan(d*Math.PI/180),log10:Math.log10,sqrt:Math.sqrt,PI:Math.PI};
+const ev=(s,k)=>new Function('c','with(c){return '+s+'}')({...H,...k});
+const f=v=>Math.abs(v)>=1e5||(v!==0&&Math.abs(v)<1e-3)?v.toExponential(3):String(parseFloat(v.toPrecision(5)));
+const show=(k,v)=>V[k][3]?f(v*100)+' %':f(v)+(V[k][2]=='–'?'':' '+V[k][2]);
+const pr=x=>x.replace(/[A-Za-z_]\w*/g,m=>V[m]?V[m][0]:m=='sind'?'sen':m=='sqrt'?'√':m=='log10'?'log':m).replace(/\*\*/g,'^').replace(/\*/g,'·');
+const sb=(x,k)=>x.replace(/[A-Za-z_]\w*/g,m=>V[m]?(k[m]<0?'('+f(k[m])+')':f(k[m])):m=='sind'?'sen':m=='sqrt'?'√':m=='log10'?'log':m).replace(/\*\*/g,'^').replace(/\*/g,'·');
+const ok=(r,k)=>r.ins.every(i=>k[i]!==undefined)&&(!r.c||ev(r.c,k));
+const S={cat:'Índices físicos',t:'e',vals:{gw:10},ver:0};
+const $=id=>document.getElementById(id);
+const targets=new Set(R.map(r=>r.t));
+function up(t,s=new Set()){R.filter(r=>r.t==t).forEach(r=>r.ins.forEach(i=>{if(!s.has(i)){s.add(i);up(i,s)}}));return s}
+function head(){
+ $('cats').innerHTML=Object.keys(C).map(c=>`<button class="c ${c==S.cat?'on':''}" data-c="${c}">${c}</button>`).join('');
+ $('tg').innerHTML=Object.keys(C[S.cat]).filter(k=>targets.has(k)).map(k=>`<button class="t ${k==S.t?'on':''}" data-t="${k}"><b>${V[k][0]}</b><small>${V[k][1]}</small></button>`).join('')}
+function inputs(){
+ const rel=up(S.t);rel.delete(S.t);
+ const ks=Object.keys(V).filter(k=>rel.has(k));
+ $('in').innerHTML=ks.map(k=>{const v=S.vals[k];return`<label class="f"><span><b>${V[k][0]}</b> ${V[k][1]}</span><div><input inputmode="decimal" data-k="${k}" placeholder="—" value="${v===undefined?'':f(V[k][3]?v*100:v)}"><i>${V[k][3]?'%':V[k][2]}</i></div></label>`}).join('')}
+function eqLine(r,k,val,tgt){return`<div class="fm">${V[r.t][0]} = ${pr(r.x)}</div><div class="fm">${V[r.t][0]} = ${sb(r.x,k)} = <b>${show(r.t,val)}</b></div>`}
+function out(){
+ const T=S.t,kn={};
+ for(const k in S.vals)if(k!=T&&isFinite(S.vals[k]))kn[k]=S.vals[k];
+ const k={...kn},st={};let ch=1;
+ while(ch){ch=0;for(const r of R){if(r.t==T||k[r.t]!==undefined||!ok(r,k))continue;const v=ev(r.x,k);if(isFinite(v)){k[r.t]=v;st[r.t]={r,v};ch=1}}}
+ const chain=(ins)=>{const o=[];const vis=x=>{if(kn[x]!==undefined||!st[x]||o.includes(x))return;st[x].r.ins.forEach(vis);o.push(x)};ins.forEach(vis);return o};
+ const kk=(x)=>x; // snapshot values
+ let alts=[],miss=[];
+ for(const r of R.filter(r=>r.t==T)){
+  if(ok(r,k)){const v=ev(r.x,k);if(isFinite(v))alts.push({r,v,ch:chain(r.ins)});else miss.push({r,m:['dados válidos (divisão por zero / log inválido)']})}
+  else{const m=r.ins.filter(i=>k[i]===undefined).map(i=>V[i][0]);miss.push({r,m:m.length?m:['condição de validade não satisfeita']})}}
+ alts.sort((a,b)=>a.ch.length-b.ch.length);
+ if(!alts.length){
+  miss.sort((a,b)=>a.m.length-b.m.length);
+  $('out').innerHTML=`<p class="mu">Preencha os dados ao lado. Ainda não há informação suficiente para calcular <b>${V[T][0]}</b>.</p><p><b>Caminhos possíveis e o que falta:</b></p><ul>${miss.slice(0,6).map(x=>`<li>${V[T][0]} = ${pr(x.r.x)} <span class="tag">${x.r.l}</span><br><span class="wr">Falta: ${x.m.join(', ')}</span></li>`).join('')}</ul>`;return}
+ const A=alts[0];
+ const sp=(a)=>a.ch.map(x=>st[x]);
+ const stepsHtml=(a)=>{let h='';const s=sp(a);const items=s.map(z=>`<li><b>Obter ${V[z.r.t][0]}</b> (${V[z.r.t][1]}) <span class="tag">${z.r.l}</span>${eqLine(z.r,k,z.v)}</li>`);
+  items.push(`<li><b>Calcular ${V[T][0]}</b> (${V[T][1]}) <span class="tag">${a.r.l}</span>${eqLine(a.r,k,a.v)}</li>`);return`<ol>${items.join('')}</ol>`};
+ const dif=alts.some(a=>Math.abs(a.v-A.v)>0.01*Math.abs(A.v)+1e-9);
+ $('out').innerHTML=`<div class="big">${V[T][0]} = ${show(T,A.v)} <small>${V[T][1]}</small></div>
+ <p class="mu">Método usado: ${A.r.l}${A.ch.length?` (usando ${A.ch.length} valor(es) intermediário(s) calculado(s))`:' (direto com seus dados)'}.</p>
+ <h2 style="margin-top:14px">Passo a passo</h2>${stepsHtml(A)}
+ ${alts.length>1?`<h2>Outras fórmulas possíveis (${alts.length-1})</h2>${dif?'<p class="wr">⚠ Os resultados diferem entre métodos — pode haver dados inconsistentes ou as correlações empíricas divergem.</p>':'<p class="ok">✓ Todos os métodos concordam.</p>'}`+alts.slice(1).map(a=>`<details><summary>${V[T][0]} = ${pr(a.r.x)} <span class="tag">${a.r.l}</span> → <b>${show(T,a.v)}</b></summary>${stepsHtml(a)}</details>`).join(''):''}
+ ${miss.length?`<details><summary class="mu">Fórmulas que ainda não dá para usar (${miss.length})</summary>${miss.map(x=>`<p class="mu">${V[T][0]} = ${pr(x.r.x)} <span class="tag">${x.r.l}</span> — falta: ${x.m.join(', ')}</p>`).join('')}</details>`:''}`}
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.c){S.cat=b.dataset.c;S.t=Object.keys(C[S.cat]).find(k=>targets.has(k));head();inputs();out()}
+ else if(b.dataset.t){S.t=b.dataset.t;head();inputs();out()}
+ else if(b.id=='clr'){S.vals={gw:10};inputs();out()}});
+document.addEventListener('input',e=>{const k=e.target.dataset.k;if(!k)return;const x=parseFloat(e.target.value.replace(',','.'));
+ if(isNaN(x))delete S.vals[k];else S.vals[k]=V[k][3]?x/100:x;out()});
+head();inputs();out();
+</script></body></html>
