@@ -161,7 +161,7 @@ Cv|K/(gw*mv)|por K e mv
 t|Tv*Hdr**2/Cv|por Tv e Cv`.split('\n').map(s=>{const[t,x,l,c]=s.split('|');const ins=[...new Set((x+' '+(c||'')).match(/[A-Za-z_]\w*/g).filter(m=>V[m]))];return{t,x,l,c,ins}});
 const H={sind:d=>Math.sin(d*Math.PI/180),tand:d=>Math.tan(d*Math.PI/180),log10:Math.log10,sqrt:Math.sqrt,PI:Math.PI};
 const ev=(s,k)=>new Function('c','with(c){return '+s+'}')({...H,...k});
-const f=v=>Math.abs(v)>=1e5||(v!==0&&Math.abs(v)<1e-3)?v.toExponential(3):String(parseFloat(v.toPrecision(5)));
+const f=v=>Math.abs(v)>=1e6||(v!==0&&Math.abs(v)<1e-5)?String(parseFloat(v.toExponential(3))):String(parseFloat(v.toPrecision(5)));
 const show=(k,v)=>V[k][3]?f(v*100)+' %':f(v)+(V[k][2]=='–'?'':' '+V[k][2]);
 const pr=x=>x.replace(/[A-Za-z_]\w*/g,m=>V[m]?V[m][0]:m=='sind'?'sen':m=='sqrt'?'√':m=='log10'?'log':m).replace(/\*\*/g,'^').replace(/\*/g,'·');
 const sb=(x,k)=>x.replace(/[A-Za-z_]\w*/g,m=>V[m]?(k[m]<0?'('+f(k[m])+')':f(k[m])):m=='sind'?'sen':m=='sqrt'?'√':m=='log10'?'log':m).replace(/\*\*/g,'^').replace(/\*/g,'·');
