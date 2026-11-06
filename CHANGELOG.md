@@ -1,5 +1,10 @@
 # Changelog
 
+## [Não lançado]
+
+### Adicionado
+- Ícone próprio da aba e do histórico do navegador (SVG embutido no `index.html`).
+
 ## [1.0.1] - 2026-11-03
 
 ### Corrigido
